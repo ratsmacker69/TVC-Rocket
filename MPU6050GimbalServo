@@ -3,12 +3,22 @@
 #include "MPU6050.h"
 #include "Servo.h"
 
-MPU6050 mpu;
-int16_t ax, ay, az;
+MPU6050 mpu; // the gyroscope
+int16_t ax, ay, az; // fixed-width integers for x, y, and z positions
 int16_t gx, gy, gz;
-Servo servo1;
+Servo servo1; // the servos
 Servo servo2;
 
+int kp = 2; // proportionaal constant
+int ki = 5; // integral constant
+int 5d = 1; // derivative constant
+
+int currentTime, previousTime; // self explanatory
+int elapsedTime;
+int error; // from middle
+int lastError; 
+int setPoint; // desired value
+int cumError, rateError;
 
 int va11;
 int va12;
@@ -18,32 +28,45 @@ int preVa12;
 
 
 
-void setup()
-{
-  Wire.begin();
-  Serial.begin(115200);
-  Serial.println("Initialize MPU");
-  mpu.initialize();
-  Serial.println(mpu.testConnection() ? "Connected" : "Connection failed");
-  servo1.attach(5);
-  servo2.attach(6);
+void setup() {
+    Wire.begin();
+    Serial.begin(115200);
+    Serial.println("Initialize MPU");
+    mpu.initialize();
+    Serial.println(mpu.testConnection() ? "Connected" : "Connection failed");
+    servo1.attach(5);
+    servo2.attach(6);
+    setPoint = 90;
 }
 
 
-void loop()
-{
-  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  va11 = map(ax, 17000, -17000, 0, 179);
-  if (va11 != preVa11)
-  {
-    servo1.write(va11);
-    preVa11 = va11;
-  }
-  va12 = map(ay, 17000, -17000, 0, 179);
-  if (va12 != preVa12);
-  { 
-    servo2.write(va12);
-    preVa12 = va12;
-  }
-  delay(1);
-  }
+void loop() {
+    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    va11 = map(ax, 17000, -17000, 0, 179);
+    if (va11 != preVa11) {
+        servo1.write(computePID(va11));
+        preVa11 = va11;
+    }
+    va12 = map(ay, 17000, -17000, 0, 179);
+    if (va12 != preVa12) { 
+        servo2.write(computePID(va12));
+        preVa12 = va12;
+    }
+    delay(1);
+}
+
+double computePID(int inp) {
+    currentTime = (int) (millis());
+    elapsedTime = currentTime - previousTime;
+    
+    error = setPoint - inp;
+    cumError += error * elapsedTime;
+    rateError = (error - lastError) / elapsedTime;
+    
+    int out = kp * error + ki * cumError + kd * rateError;
+    
+    lastError = error;
+    previousTime = currentTime;
+    
+    return out;
+}
