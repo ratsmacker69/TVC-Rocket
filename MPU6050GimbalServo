@@ -9,22 +9,22 @@ int16_t gx, gy, gz;
 Servo servo1; // the servos
 Servo servo2;
 
-int kp = 2; // proportionaal constant
-int ki = 5; // integral constant
-int 5d = 1; // derivative constant
+double kp = 2; // proportional constant
+double ki = 5; // integral constant
+double kd = 1; // derivative constant
 
-int currentTime, previousTime; // self explanatory
-int elapsedTime;
-int error; // from middle
-int lastError; 
-int setPoint; // desired value
-int cumError, rateError;
+unsigned long currentTime, previousTime; // self explanatory
+double elapsedTime;
+double error; // from middle
+double lastError; 
+double setPoint; // desired value
+double cumError, rateError;
 
-int va11;
-int va12;
+double va11;
+double va12;
 
-int preVa11;
-int preVa12;
+double preVa11;
+double preVa12;
 
 
 
@@ -55,15 +55,15 @@ void loop() {
     delay(1);
 }
 
-double computePID(int inp) {
-    currentTime = (int) (millis());
+int computePID(double inp) {
+    currentTime = millis();
     elapsedTime = currentTime - previousTime;
     
     error = setPoint - inp;
-    cumError += error * elapsedTime;
-    rateError = (error - lastError) / elapsedTime;
+    cumError += error * (double) elapsedTime;
+    rateError = (error - lastError) / (double) elapsedTime;
     
-    int out = kp * error + ki * cumError + kd * rateError;
+    int out = (int) (kp * error + ki * cumError + kd * rateError);
     
     lastError = error;
     previousTime = currentTime;
